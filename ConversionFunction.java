@@ -1,4 +1,4 @@
 public interface ConversionFunction
 {
-	public float execute(float value);
+	public double execute(double value);
 }

@@ -1,4 +1,6 @@
-abstract public class StandardFilter extends FilterFramework
+import java.util.Vector;
+
+public class StandardFilter extends FilterFramework
 {
 	protected int MeasurementLength = 8;		// This is the length of all measurements (including time) in bytes
 	protected int IdLength = 4;				// This is the length of IDs in the byte stream
@@ -7,6 +9,12 @@ abstract public class StandardFilter extends FilterFramework
 	protected int bytesread = 0;				// This is the number of bytes read from the stream
 	protected int byteswritten = 0;				// This is the number of bytes writen to the stream
 	
+	public static int g = 0;
+	public StandardFilter(Vector<Integer> idToProcess)
+	{
+		super(idToProcess);
+	}
+	
 	public void run()
 	{
 		int id;
@@ -14,26 +22,36 @@ abstract public class StandardFilter extends FilterFramework
 		
 		while(true)
 		{
-			try
-			{
-			
-				id = readNextID();
-				measurement = readNextMeasurement();
-				processIDAndMeasurement(id, Double.longBitsToDouble(measurement));
-			}
-			catch (EndOfStreamException e)
-			{
-				ClosePorts();
-				System.out.print( "\n" + this.getName() + "::Sink Exiting; bytes read: " + bytesread );
-				break;
-			}
+			System.out.println(inputReadPort.size());
+			for(currentPort = 0; currentPort < inputReadPort.size(); ++currentPort)
+				try
+				{
+					id = readNextID(currentPort);
+					//System.out.println("ID: " + id);
+					measurement = readNextMeasurement(currentPort);
+					++g;
+					//System.out.println("Measurement: " + Double.longBitsToDouble(measurement));	
+					processIDAndMeasurement(id, Double.longBitsToDouble(measurement));
+					
+				}
+				catch (EndOfStreamException e)
+				{
+					ClosePorts();
+																	System.out.println("g: " + g);
+					System.out.print( "\n" + this.getName() + "::StandardFilter Exiting; bytes read: " + bytesread );
+
+					return;
+				}
 		}
+
 		
 	}
 	
-	abstract public void processIDAndMeasurement(int id, double measurement);
+	public void processIDAndMeasurement(int id, double measurement)
+	{
+	}
 	
-	public int readNextID() throws EndOfStreamException
+	public int readNextID(int portNo) throws EndOfStreamException
 	{
 		
 		int id;							// This is the measurement id
@@ -45,11 +63,11 @@ abstract public class StandardFilter extends FilterFramework
 				****************************************************************************/
 
 				id = 0;
-
+	
 				for (i=0; i<IdLength; i++ )
 				{
-					databyte = ReadFilterInputPort();	// This is where we read the byte from the stream...
-
+					databyte = ReadFilterInputPort(portNo);	// This is where we read the byte from the stream...
+					
 					id = id | (databyte & 0xFF);		// We append the byte on to ID...
 
 					if (i != IdLength-1)				// If this is not the last byte, then slide the
@@ -66,38 +84,38 @@ abstract public class StandardFilter extends FilterFramework
 		return id;	
 	}
 	
-	public void	writeID(int ID)
+	public void	writeID(int ID, int portNo)
 	{
 		int i;
 		
 		for(i = IdLength-1; i>=0; --i)
 		{
 			databyte = (byte) (ID >> (8*i));
-			WriteFilterOutputPort(databyte);
+			WriteFilterOutputPort(databyte, portNo);
 			++byteswritten;
 		}
 	}
 	
-	public void	writeMeasurement(long measure)
+	public void	writeMeasurement(long measure, int portNo)
 	{
 		int i;
 		
 		for(i = MeasurementLength-1; i>=0; --i)
 		{
 			databyte = (byte) (measure >> (8*i));
-			WriteFilterOutputPort(databyte);
+			WriteFilterOutputPort(databyte, portNo);
 			++byteswritten;
 		}
 	}
 	
-	public long readNextMeasurement() throws EndOfStreamException
+	public long readNextMeasurement(int portNo) throws EndOfStreamException
 	{
 		long measurement=0;				// This is the word used to store all measurements - conversions are illustrated.
 		int i;
 		
 		for (i=0; i<MeasurementLength; i++ )
 				{
-					databyte = ReadFilterInputPort();
+					databyte = ReadFilterInputPort(portNo);
 					measurement = measurement | (databyte & 0xFF);	// We append the byte on to measurement...
 
 					if (i != MeasurementLength-1)					// If this is not the last byte, then slide the

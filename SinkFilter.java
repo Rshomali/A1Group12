@@ -4,13 +4,12 @@ import java.text.SimpleDateFormat;		// This class is used to format and write ti
 
 public class SinkFilter extends FilterFramework
 {	
-	
-	public SinkFilter(PipedInputStream[] inputReadPort,
-			PipedOutputStream[] outputWritePort, int[] idToProcess) {
-		super(inputReadPort, outputWritePort, idToProcess);
-		// TODO Auto-generated constructor stub
-	}
 
+	public SinkFilter(Vector<Integer> idToProcess)
+	{
+		super(idToProcess);
+	}
+	
 	public void run()
     {
 

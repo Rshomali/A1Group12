@@ -1,6 +1,6 @@
-public class Fahrenheit2Celsius extends ConversionFunction
+public class Fahrenheit2Celsius implements ConversionFunction
 {
-	public float execute(float fahrenheit)
+	public double execute(double fahrenheit)
 	{
 		return (5/9)*(fahrenheit-32);
 	}

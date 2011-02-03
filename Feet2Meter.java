@@ -1,6 +1,6 @@
-public class Feet2Meter extends ConversionFunction
+public class Feet2Meter implements ConversionFunction
 {
-	public float execute(float value)
+	public double execute(double value)
 	{
 		return value*0.3048;
 	}

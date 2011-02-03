@@ -20,6 +20,7 @@
 ******************************************************************************************************************/
 
 import java.util.HashMap;
+import java.util.Vector;
 
 public class SystemA
 {
@@ -29,7 +30,12 @@ public class SystemA
 		* Here we instantiate three filters.
 		****************************************************************************/
 
-		SourceFilter source = new SourceFilter("",new int[]{1,2,3});
+		SourceFilter source = new SourceFilter("FlightData.dat");
+		
+		Vector<Integer> keep = new Vector<Integer>();
+		keep.add(ID.TEMP);
+		keep.add(ID.ATTI);
+		FilterOut filterOut = new FilterOut(keep);
 		
 		HashMap<Integer, ConversionFunction> IDsAndFuncs = new HashMap<Integer, ConversionFunction>();
 		ConversionFunction F2C = new Fahrenheit2Celsius();
@@ -37,7 +43,9 @@ public class SystemA
 		IDsAndFuncs.put(ID.TEMP, F2C);
 		IDsAndFuncs.put(ID.ATTI, Ft2M);
 		Converter converter = new Converter(IDsAndFuncs);
-		//SinkFilter sink = new SinkFilter(null);
+		
+		
+		SinkFilter sink = new SinkFilter(null);
 
 		/****************************************************************************
 		* Here we connect the filters starting with the sink filter (Filter 1) which
@@ -45,17 +53,18 @@ public class SystemA
 		* source filter (Filter3).
 		****************************************************************************/
 
-		//sink.Connect(converter); // This esstially says, "connect Filter3 input port to Filter2 output port
-		converter.Connect(source, 0, 0); // This esstially says, "connect Filter2 intput port to Filter1 output port
+		sink.Connect(converter); // This esstially says, "connect sink input port to converter output port
+		converter.Connect(source); // This esstially says, "connect converter intput port to source output port
 
 		/****************************************************************************
 		* Here we start the filters up. All-in-all,... its really kind of boring.
 		****************************************************************************/
 
-	//	sink.start();
-		converter.start();
+		
 		source.start();
-
+		converter.start();
+		sink.start();
+		
    } // main
 
 } // Plumber
