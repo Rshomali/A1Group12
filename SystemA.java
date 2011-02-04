@@ -53,12 +53,14 @@ public class SystemA
 
 		sink.Connect(converter, 0, 0); // This esstially says, "connect sink input port to converter output port
 		converter.Connect(source, 0, 0); // This esstially says, "connect converter intput port to source output port
+	//	filterOut.Connect(source, 0, 0); // This esstially says, "connect sink input port to converter output port
 		/****************************************************************************
 		* Here we start the filters up. All-in-all,... its really kind of boring.
 		****************************************************************************/
 
 		
 		source.start();
+	//	filterOut.start();
 		converter.start();
 		sink.start();
 		

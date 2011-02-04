@@ -118,7 +118,6 @@ public class FilterFramework extends Thread
 			// Connect this filter's input to the upstream pipe's output stream
 			inputReadPort[inputPortNo].connect( filter.outputWritePort[outputPortNo] );
 			inputFilter.add(filter);
-			filter.WriteFilterOutputPort((byte)0,0);
 		} // try
 
 		catch( Exception Error )

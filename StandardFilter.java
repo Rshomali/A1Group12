@@ -30,14 +30,15 @@ public class StandardFilter extends FilterFramework
 		
 		while(true)
 		{
-			for(currentPort = 0; currentPort < inputReadPort.length; ++currentPort)
+			currentPort = 0;
+			//for(currentPort = 0; currentPort < inputReadPort.length; ++currentPort)
 				try
 				{
 					id = readNextID(currentPort);
-					//System.out.println("ID: " + id);
+					System.out.println("ID: " + id);
 					measurement = readNextMeasurement(currentPort);
 					++g;
-					//System.out.println("Measurement: " + Double.longBitsToDouble(measurement));	
+					System.out.println("Measurement: " + Double.longBitsToDouble(measurement));	
 					processIDAndMeasurement(id, Double.longBitsToDouble(measurement));
 					
 				}
@@ -74,7 +75,7 @@ public class StandardFilter extends FilterFramework
 				for (i=0; i<IdLength; i++ )
 				{
 					databyte = ReadFilterInputPort(portNo);	// This is where we read the byte from the stream...
-					
+//System.out.println(String.format("ID %x", databyte));
 					id = id | (databyte & 0xFF);		// We append the byte on to ID...
 
 					if (i != IdLength-1)				// If this is not the last byte, then slide the
@@ -123,6 +124,7 @@ public class StandardFilter extends FilterFramework
 		for (i=0; i<MeasurementLength; i++ )
 				{
 					databyte = ReadFilterInputPort(portNo);
+//System.out.println(String.format("measure %x", databyte));
 					measurement = measurement | (databyte & 0xFF);	// We append the byte on to measurement...
 
 					if (i != MeasurementLength-1)					// If this is not the last byte, then slide the
