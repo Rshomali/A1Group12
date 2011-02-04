@@ -11,7 +11,6 @@ public class SinkFilter extends FilterFramework
 			PipedOutputStream[] outputWritePort, int[] idToProcess, String fileName) {
 		super(inputReadPort, outputWritePort, idToProcess);
 		this.fileName = fileName;
-		// TODO Auto-generated constructor stub
 	}
 
 	public void run()
@@ -22,6 +21,7 @@ public class SinkFilter extends FilterFramework
 		DecimalFormat temperaturFormat = new DecimalFormat("000.00000");
 		DecimalFormat altitudeFormat = new DecimalFormat("000000.00000");
 		DecimalFormat pressureFormat = new DecimalFormat("00.000000");
+		DecimalFormat otherFormat = new DecimalFormat("00000.000000");
 		
 		int MeasurementLength = 8;		// This is the length of all measurements (including time) in bytes
 		int IdLength = 4;				// This is the length of IDs in the byte stream
@@ -33,7 +33,6 @@ public class SinkFilter extends FilterFramework
 		int id;							// This is the measurement id
 		int i;							// This is a loop counter
 		
-		int byteswritten = 0;				// Number of bytes written to the stream.
 		DataOutputStream out = null;			// File stream reference.
 
 		/*************************************************************
@@ -43,8 +42,30 @@ public class SinkFilter extends FilterFramework
 		System.out.println( "\n" + this.getName() + "::Sink Reading ");
 		try {
 			out = new DataOutputStream(new FileOutputStream(fileName));
+			
+			//write the title of each coloum
+			for(i=0; i<this.getIdToProcess().length;i++)
+			{
+				if(this.getIdToProcess()[i]==0)
+					out.writeUTF("Time:\t\t\t\t\t\t");
+				if(this.getIdToProcess()[i]==1)
+					out.writeUTF("Velocity:\t\t\t\t\t\t");
+				if(this.getIdToProcess()[i]==2)
+					out.writeUTF("Altitude:\t\t\t\t\t\t");
+				if(this.getIdToProcess()[i]==3)
+					out.writeUTF("Pressure:\t\t\t\t\t\t");
+				if(this.getIdToProcess()[i]==4)
+					out.writeUTF("Temperature:\t\t\t\t\t\t");
+				if(this.getIdToProcess()[i]==5)
+					out.writeUTF("Altitude:\t\t\t\t\t\t");
+			}
+			out.writeUTF("\n----------------------------------" +
+					"---------------------------------------------" +
+					"---------------------------------------------------\n");
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 		
 		while (true)
@@ -63,7 +84,6 @@ public class SinkFilter extends FilterFramework
 					bytesread++;						// Increment the byte count
 				} // for
 
-
 				measurement = 0;
 				for (i=0; i<MeasurementLength; i++ )
 				{
@@ -81,53 +101,30 @@ public class SinkFilter extends FilterFramework
 					TimeStamp.setTimeInMillis(measurement);
 					System.out.println();
 					System.out.print( TimeStampFormat.format(TimeStamp.getTime()));
-				} 
-				
+					out.writeUTF("\n"+TimeStampFormat.format(TimeStamp.getTime())+"\t\t\t\t\t\t");
+				} 				
 				if(id==2)
-					System.out.print("        ID = " + id +"   " +altitudeFormat.format(Double.longBitsToDouble(measurement)));
-				
+				{
+					System.out.print("      ID = " + id +"   " +altitudeFormat.format(Double.longBitsToDouble(measurement)));
+					out.writeUTF(altitudeFormat.format(Double.longBitsToDouble(measurement))+"\t\t\t\t\t\t");
+				}				
 				if(id==3)  
-					System.out.print("        ID = " + id +"   " +pressureFormat.format(Double.longBitsToDouble(measurement)));
-					
+				{
+					System.out.print("      ID = " + id +"   " +pressureFormat.format(Double.longBitsToDouble(measurement)));
+					out.writeUTF(pressureFormat.format(Double.longBitsToDouble(measurement))+"\t\t\t\t\t\t");
+				}	
 				if(id==4)
-					System.out.print("        ID = " + id +"   " +temperaturFormat.format(Double.longBitsToDouble(measurement)));
-					
-				//System.out.print( "\n" );
+				{
+					System.out.print("      ID = " + id +"   " +temperaturFormat.format(Double.longBitsToDouble(measurement)));
+					out.writeUTF(temperaturFormat.format(Double.longBitsToDouble(measurement))+"\t\t\t\t\t\t");
+				}
+				if(id==1|id==5)
+				{
+					System.out.print("      ID = " + id +"   " +otherFormat.format(Double.longBitsToDouble(measurement)));
+					out.writeUTF(otherFormat.format(Double.longBitsToDouble(measurement))+"\t\t\t\t\t\t");			
+				}
 				
-				
-				
-				byte[] bt = new byte[12];
-				bt[0] = (byte) (0xff & id);
-				bt[1] = (byte) (0xff &( id >> 8));
-				bt[2] = (byte) (0xff &( id >> 16));
-				bt[3] = (byte) (0xff &( id >> 24));		
-					
-				bt[4] = (byte) (0xff & measurement);
-				bt[5] = (byte) (0xff &( measurement >> 8));
-				bt[6] = (byte) (0xff &( measurement >> 16));
-				bt[7] = (byte) (0xff &( measurement >> 24));
-				bt[8] = (byte) (0xff &( measurement >> 32));
-				bt[9] = (byte) (0xff &( measurement >> 40));
-				bt[10] = (byte) (0xff &( measurement >> 48));
-				bt[11] = (byte) (0xff &( measurement >> 56));
-				out.writeByte(bt[3]);
-				out.writeByte(bt[2]);
-				out.writeByte(bt[1]);
-				out.writeByte(bt[0]);
-
-				out.writeByte(bt[11]);
-				out.writeByte(bt[10]);
-				out.writeByte(bt[9]);
-				out.writeByte(bt[8]);
-				out.writeByte(bt[7]);
-				out.writeByte(bt[6]);
-				out.writeByte(bt[5]);
-				out.writeByte(bt[4]);
-							
 			} // try
-
-		
-						
 			
 			catch (EndOfStreamException e)
 			{
