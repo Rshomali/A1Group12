@@ -5,12 +5,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Vector;
 
 
-public class ExtrapolatorFilter extends FilterFramework {
+public class ExtrapolatorFilter extends StandardFilter {
 	private int[] idToProcess;
 	private double[] frame;
 	private int measurementsPerFrame;
@@ -25,8 +27,10 @@ public class ExtrapolatorFilter extends FilterFramework {
 	
 	protected HashMap<Integer, WildPointTest> wildPointTest;
 	
-	public ExtrapolatorFilter()
+	public ExtrapolatorFilter(HashMap<Integer, WildPointTest> IDsAndWildPointTests)
 	{
+		super(new Vector<Integer>(Arrays.asList(IDsAndWildPointTests.keySet().toArray(new Integer[]{}))));
+		
 		measurementsPerFrame = 5;
 		wildPointFrameFound = false;
 		frame = new double[measurementsPerFrame];
@@ -37,7 +41,7 @@ public class ExtrapolatorFilter extends FilterFramework {
 		timeStamp = Calendar.getInstance();
 		timeStampFormat = new SimpleDateFormat("yyyy MM dd::hh:mm:ss:SSS");
 		
-		lastValidFrame = new double[idToProcess.length];
+		lastValidFrame = new double[measurementsPerFrame];
 		
 	}
 	
@@ -206,7 +210,9 @@ public class ExtrapolatorFilter extends FilterFramework {
 	
 	private void sendToOutport(int id, double value)
 	{
-		writeValue(id, value);
+		long longResult = Double.doubleToLongBits(value);
+		writeID(id, currentPort);
+		writeMeasurement(longResult, currentPort);
 	}
 	
 	private double[] extrapolateMeasurements()
