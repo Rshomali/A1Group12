@@ -1,5 +1,3 @@
-package assignment1;
-
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.text.SimpleDateFormat;
