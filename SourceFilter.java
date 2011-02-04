@@ -21,19 +21,21 @@ import java.io.*; // note we must add this here since we use BufferedReader clas
 
 public class SourceFilter extends FilterFramework
 {
-	/*public static void main(String[] args)
+	public static void main(String[] args)
 	{
 		PipedOutputStream outputWritePort[] = new PipedOutputStream[2];
 		outputWritePort[0] = new PipedOutputStream();
 		outputWritePort[1] = new PipedOutputStream();		
 		SourceFilter source = new SourceFilter(null,outputWritePort, "/Users/nanchen/eclipseWorkspace/analysis/Sample1/src/sample/SubSetA.dat", null);
 		source.run();
-	}*/
+	}
 	
 	private String filepath;
 	
-	public SourceFilter(String path)
+	public SourceFilter(PipedInputStream inputReadPort[], PipedOutputStream outputWritePort[], 
+			String path, int[] idToProcess)
 	{
+		super(inputReadPort, outputWritePort, idToProcess);
 		filepath = path;
 	}
 	
@@ -75,7 +77,7 @@ public class SourceFilter extends FilterFramework
 
 		catch ( EOFException eoferr )
 		{
-			System.out.println("\n" + this.getName() + "::End of file reached..." );
+			System.out.println("\n\n" + this.getName() + "::End of file reached..." );
 			try
 			{
 				in.close();

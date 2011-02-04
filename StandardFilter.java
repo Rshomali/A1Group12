@@ -1,4 +1,6 @@
 import java.util.Vector;
+import java.io.*;
+
 
 public class StandardFilter extends FilterFramework
 {
@@ -10,9 +12,15 @@ public class StandardFilter extends FilterFramework
 	protected int byteswritten = 0;				// This is the number of bytes writen to the stream
 	
 	public static int g = 0;
-	public StandardFilter(Vector<Integer> idToProcess)
+	
+	public StandardFilter(PipedInputStream inputReadPort[], PipedOutputStream outputWritePort[], int idToProcess[])
 	{
-		super(idToProcess);
+		super(inputReadPort, outputWritePort, idToProcess);
+	}
+	
+	public StandardFilter(PipedInputStream inputReadPort[], PipedOutputStream outputWritePort[], Integer idToProcess[])
+	{		
+		super(inputReadPort, outputWritePort, idToProcess);
 	}
 	
 	public void run()
@@ -22,8 +30,7 @@ public class StandardFilter extends FilterFramework
 		
 		while(true)
 		{
-			System.out.println(inputReadPort.size());
-			for(currentPort = 0; currentPort < inputReadPort.size(); ++currentPort)
+			for(currentPort = 0; currentPort < inputReadPort.length; ++currentPort)
 				try
 				{
 					id = readNextID(currentPort);

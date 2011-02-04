@@ -1,3 +1,5 @@
+
+
 /******************************************************************************************************************
 * File:FilterFramework.java
 * Course: 17655
@@ -40,27 +42,38 @@ import java.util.Vector;
 public class FilterFramework extends Thread
 {
 	// Define filter input and output ports
-	protected Vector<PipedInputStream> inputReadPort = new Vector<PipedInputStream>();
-	protected Vector<PipedOutputStream> outputWritePort  = new Vector<PipedOutputStream>();
-	protected Vector<Integer> idToProcess;
+	protected PipedInputStream inputReadPort[];
+	protected PipedOutputStream outputWritePort[];
+	protected int idToProcess[];
 	
 	protected int currentPort = 0;
-	//this indicates which port we're processing data from right now
 	
 	// The following reference to a filter is used because java pipes are able to reliably
 	// detect broken pipes on the input port of the filter. This variable will point to
 	// the previous filter in the network and when it dies, we know that it has closed its
 	// output pipe and will send no more data.
 
-	protected Vector<FilterFramework> inputFilter = new Vector<FilterFramework>();
+	public int[] getIdToProcess() {
+		return idToProcess;
+	}
+
+	private Vector<FilterFramework> inputFilter = new Vector<FilterFramework>();
 	
-	public FilterFramework()
+	
+	public FilterFramework(PipedInputStream inputReadPort[], PipedOutputStream outputWritePort[], int idToProcess[])
 	{
+		this.inputReadPort = inputReadPort;
+		this.outputWritePort = outputWritePort;
+		this.idToProcess = idToProcess;
 	}
 	
-	public FilterFramework(Vector<Integer> idToProcess)
+	public FilterFramework(PipedInputStream inputReadPort[], PipedOutputStream outputWritePort[], Integer idToProcess[])
 	{
-		this.idToProcess = idToProcess;
+		this.inputReadPort = inputReadPort;
+		this.outputWritePort = outputWritePort;
+		this.idToProcess = new int[idToProcess.length];
+		for(int i=0; i<this.idToProcess.length; ++i)
+			this.idToProcess[i] = idToProcess[i];
 	}
 	
 	/***************************************************************************
@@ -98,16 +111,14 @@ public class FilterFramework extends Thread
 	*
 	****************************************************************************/
 
-	void Connect( FilterFramework filter)
+	void Connect( FilterFramework filter, int inputPortNo, int outputPortNo )
 	{
 		try
 		{
-			filter.outputWritePort.add(new PipedOutputStream());
-			inputReadPort.add(new PipedInputStream());
-	// Connect this filter's input to the upstream pipe's output stream
-			inputReadPort.lastElement().connect( filter.outputWritePort.lastElement() );
+			// Connect this filter's input to the upstream pipe's output stream
+			inputReadPort[inputPortNo].connect( filter.outputWritePort[outputPortNo] );
 			inputFilter.add(filter);
-
+			filter.WriteFilterOutputPort((byte)0,0);
 		} // try
 
 		catch( Exception Error )
@@ -149,7 +160,7 @@ public class FilterFramework extends Thread
 
 		try
 		{
-			while (inputReadPort.elementAt(inputPortNo).available()==0 )
+			while (inputReadPort[inputPortNo].available()==0 )
 			{
 				if (EndOfInputStream(inputPortNo))
 				{
@@ -162,13 +173,11 @@ public class FilterFramework extends Thread
 
 		catch( EndOfStreamException Error )
 		{
-					System.out.println("DAYM1");
 			throw Error;
 		} // catch
 
 		catch( Exception Error )
 		{
-					System.out.println("DAYM2");
 			System.out.println( "\n" + this.getName() + " Error in read port wait loop::" + Error );
 		} // catch
 
@@ -178,7 +187,7 @@ public class FilterFramework extends Thread
 		***********************************************************************/
 		try
 		{
-			datum = (byte)inputReadPort.elementAt(inputPortNo).read();
+			datum = (byte)inputReadPort[inputPortNo].read();
 			return datum;
 		} // try
 
@@ -205,11 +214,10 @@ public class FilterFramework extends Thread
 
 	void WriteFilterOutputPort(byte datum, int outputNo)
 	{
-		//System.out.println("\n" + this.getName() + " writing something on the pipe");
 		try
 		{
-			outputWritePort.elementAt(outputNo).write((int) datum );
-		   	outputWritePort.elementAt(outputNo).flush();
+			outputWritePort[outputNo].write((int) datum );
+		   	outputWritePort[outputNo].flush();
 		} // try
 
 		catch( Exception Error )
@@ -262,10 +270,10 @@ public class FilterFramework extends Thread
 	{
 		try
 		{
-			for(int i=0; inputReadPort!=null && i<inputReadPort.size(); i++)
-				inputReadPort.elementAt(i).close();
-			for(int i=0; outputWritePort!=null && i<outputWritePort.size(); i++)
-				outputWritePort.elementAt(i).close();
+			for(int i=0; inputReadPort!=null && i<inputReadPort.length; i++)
+				inputReadPort[i].close();
+			for(int i=0; outputWritePort!=null && i<outputWritePort.length; i++)
+				outputWritePort[i].close();
 		}
 		catch( Exception Error )
 		{

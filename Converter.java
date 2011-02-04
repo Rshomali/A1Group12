@@ -1,20 +1,18 @@
-import java.util.HashMap;
-import java.util.Vector;
-import java.util.Arrays;
+import java.util.*;
+import java.io.*;
 
 public class Converter extends StandardFilter
 {
-	protected HashMap<Integer,ConversionFunction> conversionFunction;
+	protected HashMap<Integer, ConversionFunction> conversionFunction;
 
-	public Converter(HashMap<Integer, ConversionFunction> IDsAndFuncs)
+	public Converter(PipedInputStream inputReadPort[], PipedOutputStream outputWritePort[], HashMap<Integer, ConversionFunction> IDsAndFuncs)
 	{
-		super(new Vector(Arrays.asList(IDsAndFuncs.keySet().toArray(new Integer[]{}))));
+		super(inputReadPort, outputWritePort, (new ArrayList<Integer>(IDsAndFuncs.keySet())).toArray(new Integer[]{}) );//, Arrays.asList(IDsAndFuncs.keySet()).toArray(new Integer[]{}));
 		conversionFunction = IDsAndFuncs;
 	}
 
 	public void processIDAndMeasurement(int id, double measurement)
 	{
-		System.out.println("\n" + this.getName() + "YYYESSSSS !!!!   ID: " + id + " value: " + measurement );
 		ConversionFunction func = conversionFunction.get(id);
 		double result;
 		if(func == null)

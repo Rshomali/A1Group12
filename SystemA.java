@@ -21,6 +21,7 @@
 
 import java.util.HashMap;
 import java.util.Vector;
+import java.io.*;
 
 public class SystemA
 {
@@ -30,22 +31,19 @@ public class SystemA
 		* Here we instantiate three filters.
 		****************************************************************************/
 
-		SourceFilter source = new SourceFilter("FlightData.dat");
+		SourceFilter source = new SourceFilter(null, new PipedOutputStream[]{new PipedOutputStream()}, "FlightData.dat", null);
 		
-		Vector<Integer> keep = new Vector<Integer>();
-		keep.add(ID.TEMP);
-		keep.add(ID.ATTI);
-		FilterOut filterOut = new FilterOut(keep);
+		FilterOut filterOut = new FilterOut(new PipedInputStream[]{new PipedInputStream()}, new PipedOutputStream[]{new PipedOutputStream()}, new int[]{ID.TEMP, ID.ATTI});
 		
 		HashMap<Integer, ConversionFunction> IDsAndFuncs = new HashMap<Integer, ConversionFunction>();
 		ConversionFunction F2C = new Fahrenheit2Celsius();
 		ConversionFunction Ft2M = new Feet2Meter();
 		IDsAndFuncs.put(ID.TEMP, F2C);
 		IDsAndFuncs.put(ID.ATTI, Ft2M);
-		Converter converter = new Converter(IDsAndFuncs);
+		Converter converter = new Converter(new PipedInputStream[]{new PipedInputStream()}, new PipedOutputStream[]{new PipedOutputStream()}, IDsAndFuncs);
 		
 		
-		SinkFilter sink = new SinkFilter(null);
+		SinkFilter sink = new SinkFilter(new PipedInputStream[]{new PipedInputStream()}, null, null, "output.dat");
 
 		/****************************************************************************
 		* Here we connect the filters starting with the sink filter (Filter 1) which
@@ -53,9 +51,8 @@ public class SystemA
 		* source filter (Filter3).
 		****************************************************************************/
 
-		sink.Connect(converter); // This esstially says, "connect sink input port to converter output port
-		converter.Connect(source); // This esstially says, "connect converter intput port to source output port
-
+		sink.Connect(converter, 0, 0); // This esstially says, "connect sink input port to converter output port
+		converter.Connect(source, 0, 0); // This esstially says, "connect converter intput port to source output port
 		/****************************************************************************
 		* Here we start the filters up. All-in-all,... its really kind of boring.
 		****************************************************************************/

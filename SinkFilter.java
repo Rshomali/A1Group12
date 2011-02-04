@@ -1,21 +1,28 @@
 import java.util.*;						// This class is used to interpret time words
 import java.io.*;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;		// This class is used to format and write time in a string format.
 
 public class SinkFilter extends FilterFramework
 {	
-
-	public SinkFilter(Vector<Integer> idToProcess)
-	{
-		super(idToProcess);
-	}
 	
+	String fileName;
+	public SinkFilter(PipedInputStream[] inputReadPort,
+			PipedOutputStream[] outputWritePort, int[] idToProcess, String fileName) {
+		super(inputReadPort, outputWritePort, idToProcess);
+		this.fileName = fileName;
+		// TODO Auto-generated constructor stub
+	}
+
 	public void run()
     {
 
 		Calendar TimeStamp = Calendar.getInstance();
 		SimpleDateFormat TimeStampFormat = new SimpleDateFormat("yyyy::dd::hh:mm:ss");
-
+		DecimalFormat temperaturFormat = new DecimalFormat("000.00000");
+		DecimalFormat altitudeFormat = new DecimalFormat("000000.00000");
+		DecimalFormat pressureFormat = new DecimalFormat("00.000000");
+		
 		int MeasurementLength = 8;		// This is the length of all measurements (including time) in bytes
 		int IdLength = 4;				// This is the length of IDs in the byte stream
 
@@ -26,7 +33,6 @@ public class SinkFilter extends FilterFramework
 		int id;							// This is the measurement id
 		int i;							// This is a loop counter
 		
-		String fileName = "outputA.dat";	
 		int byteswritten = 0;				// Number of bytes written to the stream.
 		DataOutputStream out = null;			// File stream reference.
 
@@ -38,13 +44,13 @@ public class SinkFilter extends FilterFramework
 		try {
 			out = new DataOutputStream(new FileOutputStream(fileName));
 		} catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+		
 		while (true)
 		{
 			try
-			{
+			{				
 				id = 0;
 				for (i=0; i<IdLength; i++ )
 				{
@@ -73,11 +79,20 @@ public class SinkFilter extends FilterFramework
 				if ( id == 0 )
 				{
 					TimeStamp.setTimeInMillis(measurement);
+					System.out.println();
+					System.out.print( TimeStampFormat.format(TimeStamp.getTime()));
 				} 
 				
-				System.out.print("  ID = " + id +
-						"         " +Double.longBitsToDouble(measurement));
-				System.out.print( "\n" );
+				if(id==2)
+					System.out.print("        ID = " + id +"   " +altitudeFormat.format(Double.longBitsToDouble(measurement)));
+				
+				if(id==3)  
+					System.out.print("        ID = " + id +"   " +pressureFormat.format(Double.longBitsToDouble(measurement)));
+					
+				if(id==4)
+					System.out.print("        ID = " + id +"   " +temperaturFormat.format(Double.longBitsToDouble(measurement)));
+					
+				//System.out.print( "\n" );
 				
 				
 				
@@ -112,6 +127,8 @@ public class SinkFilter extends FilterFramework
 			} // try
 
 		
+						
+			
 			catch (EndOfStreamException e)
 			{
 				ClosePorts();
@@ -121,12 +138,7 @@ public class SinkFilter extends FilterFramework
 			catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}
-			
-		
-
+			}	
 		}
-
    } // run
-
 } // SingFilter
