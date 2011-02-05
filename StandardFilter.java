@@ -44,6 +44,7 @@ public class StandardFilter extends FilterFramework
 				}
 				catch (EndOfStreamException e)
 				{
+					processIDAndMeasurement(-1, (Double) 0.0);	// Signal End of File to filter by sending id = -1 
 					ClosePorts();
 																	System.out.println("g: " + g);
 					System.out.print( "\n" + this.getName() + "::StandardFilter Exiting; bytes read: " + bytesread );
