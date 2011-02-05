@@ -1,4 +1,3 @@
-package assignment1;
 
 import java.util.*;						// This class is used to interpret time words
 import java.io.*;
