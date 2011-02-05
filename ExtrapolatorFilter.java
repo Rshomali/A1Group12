@@ -3,6 +3,8 @@ import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +15,6 @@ import java.util.Vector;
 
 
 public class ExtrapolatorFilter extends StandardFilter {
-	private int[] idToProcess;
 	private double[] frame;
 	private int measurementsPerFrame;
 	private boolean wildPointFrameFound;
@@ -24,16 +25,29 @@ public class ExtrapolatorFilter extends StandardFilter {
 	private Calendar timeStamp;
 	private SimpleDateFormat timeStampFormat;
 	private DataOutputStream rejectedValuesFile;
+	private boolean endofFile;
+	private boolean validValueFound;
+	private boolean[] validIds;
 	
 	protected HashMap<Integer, WildPointTest> wildPointTest;
 	
-	public ExtrapolatorFilter(HashMap<Integer, WildPointTest> IDsAndWildPointTests)
+	public ExtrapolatorFilter(PipedInputStream inputReadPort[], PipedOutputStream outputWritePort[], HashMap<Integer, WildPointTest> IDsAndWildPointTests)
 	{
-		super(new Vector<Integer>(Arrays.asList(IDsAndWildPointTests.keySet().toArray(new Integer[]{}))));
+		super(inputReadPort, outputWritePort, (new ArrayList<Integer>(IDsAndWildPointTests.keySet())).toArray(new Integer[]{}) );
 		
-		measurementsPerFrame = 5;
+		//System.out.println(this.getName() + "::" + ">>>>>>>"+ this.idToProcess.length +"\n");
+		
+		wildPointTest = IDsAndWildPointTests;
+		
+		//System.out.println(this.getName() + "::" + " function"+ this.wildPointTest.get(3).toString() +"\n");
+		
+		measurementsPerFrame = 6;
 		wildPointFrameFound = false;
 		frame = new double[measurementsPerFrame];
+		this.validIds = new boolean[measurementsPerFrame];
+		for(int i=0; i<this.measurementsPerFrame;i++)
+			this.validIds[i] = false;
+		
 		cachedFrames = new ArrayList<double[]>(1);
 		measurementsRead = 0;
 		rejectedValuesFileIsOpen = false;
@@ -43,12 +57,11 @@ public class ExtrapolatorFilter extends StandardFilter {
 		
 		lastValidFrame = new double[measurementsPerFrame];
 		
+		endofFile = false;
+		validValueFound = false;
+		
 	}
 	
-	public void run()
-    {
-
-    } // run
 
 	public void processIDAndMeasurement(int id, double measurement_value)
 	{
@@ -75,8 +88,30 @@ public class ExtrapolatorFilter extends StandardFilter {
 		 * End IF
 		 */
 		
-		// Keep storing measurements until we have a full frame
-		storeMeasurement(id, measurement_value);
+		if(id == -1)
+		{
+			this.endofFile = true;
+			System.out.println(this.getName() + "::EndOfFile FOUND " + id + "\n");
+			if(this.wildPointFrameFound)
+			{
+  				// calculate extrapolation value for each required measurement
+    			double[] extrapolatedValue = extrapolateMeasurements();
+    			
+    			// send cached frames (which contain wild points) with
+    			// the extrapolated value for each instead
+    			processAllCachedFrames(extrapolatedValue);
+    			
+    			// reset the flag since we lready took care of wild points
+    			this.wildPointFrameFound = false;
+			}
+		}
+		else
+		{
+			this.validIds[id] = true;
+			// Keep storing measurements until we have a full frame
+			storeMeasurement(id, measurement_value);
+			System.out.println(this.getName() + ":: Received=> " + id + "\t" + measurement_value + "\n");
+		}
 		
 		// check if we have a full frame by counting how many frames we already stored
 		if ( allMeasurementsRead() )
@@ -85,16 +120,20 @@ public class ExtrapolatorFilter extends StandardFilter {
 			// when all of them are true
 			boolean wildPointTestPassed = false;
 			
+			//System.out.println(this.getName() + "::" + "Fullllll Frammmmmeeeee .....\n");
 			// Go over the measurements in the frame and test for wild points
 			for (int i=0; i< this.frame.length; i++) 
 			{
 				// check if the measurement ID is one of the IDs I should check for wild points
 			    if (shouldProcessID(i))
 			    {
+			    	//System.out.println(this.getName() + "::" + "Should test ID="+ i +".....\n");
+			    	
+			    	//System.out.println(this.getName() + "::" + "Result="+ isWildPoint(i,this.frame[i]) +".....\n");
 			    	// Check the measurement if its value is a wild point
 			    	// if not all  measurements we need to check are wild points then
 			    	// this is a valid frame
-			    	if( ! isWildPoint(i,measurement_value) )
+			    	if( ! isWildPoint(i,this.frame[i]) )
 			    	{
 			    		wildPointTestPassed = true;
 			    	} // if
@@ -107,9 +146,12 @@ public class ExtrapolatorFilter extends StandardFilter {
 			// frames then we need to extrapolate
     		if( wildPointTestPassed)
     		{
+    			System.out.println(this.getName() + "::Tests PASSED " + "\n");
+    			this.lastValidFrame = this.frame;
     			// if previous frame[s] contained wild points
     			if(this.wildPointFrameFound)
     			{
+    				System.out.println(this.getName() + "::WildPintFrame FOUND " + "\n");
     				// calculate extrapolation value for each required measurement
 	    			double[] extrapolatedValue = extrapolateMeasurements();
 	    			
@@ -117,21 +159,22 @@ public class ExtrapolatorFilter extends StandardFilter {
 	    			// the extrapolated value for each instead
 	    			processAllCachedFrames(extrapolatedValue);
 	    			
-	    			// reset the flag since we lready took care of wild points
+	    			// reset the flag since we already took care of wild points
 	    			this.wildPointFrameFound = false;
     			}
     			else
     			{
     				for (int i=0; i< this.frame.length; i++) 
     				{
-    					sendToOutport(i, this.frame[i]);
+    					if(this.validIds[i])
+    						sendToOutport(i, this.frame[i]);
     				}
     			}
     		}
     		else
     		{
     			this.cachedFrames.add(this.frame);
-    			
+    			System.out.println(this.getName() + "::Tests FAILED " + "\n");
     			// this flag is set so that the next time we get a valid frame
     			// we know that we need to extrapolate measurements
     			this.wildPointFrameFound = true;	
@@ -144,44 +187,28 @@ public class ExtrapolatorFilter extends StandardFilter {
 		} // if
 	}
 	
+	
 	private void processAllCachedFrames(double[] extrapolated_value)
 	{
-		// open rejected file
-		if( ! this.rejectedValuesFileIsOpen)
-		{
-			// Open file, will create it if doesn't exist
-			try {
-				this.rejectedValuesFile = new DataOutputStream(new FileOutputStream("rejected_file.txt"));
-				
-				//write header to file
-				this.rejectedValuesFile.writeUTF("Time:\t\tTemperature (C):\tAltitude (m):\n");
-				this.rejectedValuesFile.writeUTF("___________________________________________________________________\n");
-				
-				this.rejectedValuesFileIsOpen = true;
-				
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			
-		}
+	
+	
 		
-		try {
-			
-			Iterator<double[]> itr = this.cachedFrames.iterator();
-			while(itr.hasNext())
+		Iterator<double[]> itr = this.cachedFrames.iterator();
+		while(itr.hasNext())
+		{
+			double[] temp_frame = itr.next();
+            
+            sendToRejectedPort(0, temp_frame[0]);
+            
+			for(int i=0; i< temp_frame.length; i++)
 			{
-				double[] temp_frame = itr.next();
-	            this.timeStamp.setTimeInMillis((long) temp_frame[0]);
-	            this.rejectedValuesFile.writeUTF(this.timeStampFormat.format(this.timeStamp.getTime()) +"\t\t");
-	        	
-				for(int i=0; i< temp_frame.length; i++)
+				
+				if(this.validIds[i])
 				{
-					if(shouldProcessID(i))
+					if(shouldProcessID(i) )
 					{
 						// write to rejected file
-						this.rejectedValuesFile.writeUTF(temp_frame[i] +"\t");
+						sendToRejectedPort(i, temp_frame[i]);
 						sendToOutport(i, extrapolated_value[i]);
 					}
 					else
@@ -189,11 +216,9 @@ public class ExtrapolatorFilter extends StandardFilter {
 						sendToOutport(i, temp_frame[i]);
 					}
 				}
-				this.rejectedValuesFile.writeUTF("\n");
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
+	
 	}
 	
 	private boolean shouldProcessID(int id)
@@ -210,9 +235,19 @@ public class ExtrapolatorFilter extends StandardFilter {
 	
 	private void sendToOutport(int id, double value)
 	{
+		System.out.println(this.getName() + "::Sending==> " + id + "\t" + value + "\n");
 		long longResult = Double.doubleToLongBits(value);
 		writeID(id, currentPort);
 		writeMeasurement(longResult, currentPort);
+	}
+
+	private void sendToRejectedPort(int id, double value)
+	{
+		long longResult = Double.doubleToLongBits(value);
+		writeID(id, 1);
+		writeMeasurement(longResult, 1);
+		
+		//System.out.println(this.getName() + "::Rejecting==> " + id + "\t" + value + "\n");
 	}
 	
 	private double[] extrapolateMeasurements()
@@ -223,7 +258,23 @@ public class ExtrapolatorFilter extends StandardFilter {
 		{
 			if(this.shouldProcessID(i))
 			{
-				extrapolated_values[i] = (this.frame[i]+this.lastValidFrame[i])/2;
+				if(this.endofFile)
+				{
+					extrapolated_values[i] = this.lastValidFrame[i];
+				}
+				else if(! this.validValueFound)
+				{
+					extrapolated_values[i] = this.frame[i];
+				}
+				else
+				{
+					extrapolated_values[i] = (this.frame[i]+this.lastValidFrame[i])/2;
+				}
+				System.out.println(this.getName() + ":: Extrapolated Before=" + this.frame[i] + "\tAfter=" + extrapolated_values[i] + "Last Valid Measurement="+ this.lastValidFrame[i] + "\n");
+			}
+			else
+			{
+				extrapolated_values[i] = this.lastValidFrame[i];
 			}
 		}
 		
@@ -233,15 +284,18 @@ public class ExtrapolatorFilter extends StandardFilter {
 	private void clearFrame()
 	{
 		this.frame = new double[this.measurementsPerFrame];
+		this.measurementsRead = 0;
 	}
 	
 	private void storeMeasurement(int id, double value)
 	{
 		this.frame[id] = value;
+		this.measurementsRead++;
 	}
 	
 	private boolean allMeasurementsRead()
 	{
+		//System.out.println(this.getName() + "::" + "Measures read="+this.measurementsRead+"\n");
 		if (this.measurementsRead == this.measurementsPerFrame)
 			return true;
 		else
@@ -250,7 +304,11 @@ public class ExtrapolatorFilter extends StandardFilter {
 	
 	private boolean isWildPoint(int id, double value)
 	{
+		//System.out.println(this.getName() + "::" + "ID=======" + id + "    Value=====" + value + "\n");
+		//System.out.println(this.getName() + "::" + "testing ID="+ id+ " Value="+value+" function"+ this.wildPointTest.get(id).toString() + "\n");
+		
 		return this.wildPointTest.get(id).execute(value);
+		//return false;
 	}
 
 }
