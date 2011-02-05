@@ -1,3 +1,5 @@
+package assignment1;
+
 import java.util.*;						// This class is used to interpret time words
 import java.io.*;
 import java.text.DecimalFormat;
@@ -43,9 +45,23 @@ public class SinkFilter extends FilterFramework
 		try {
 			out = new DataOutputStream(new FileOutputStream(fileName));
 			
-			//write the title of each coloum
-			for(i=0; i<this.getIdToProcess().length;i++)
-			{
+				//sort the idToProcess array in order to 
+				//print the title of the column in the same order with the contents
+				int temp=0;
+				for(i=0; i<this.getIdToProcess().length;i++)
+				for(int j=i+1; j<this.getIdToProcess().length; j++)
+				{
+					if(this.getIdToProcess()[i]>this.getIdToProcess()[j])
+					{
+						temp = this.getIdToProcess()[i];
+						this.getIdToProcess()[i] = this.getIdToProcess()[j];
+						this.getIdToProcess()[j] = temp;
+					}
+				}
+		
+				//write the title of each coloum
+				for(i=0; i<this.getIdToProcess().length;i++)
+				{
 				if(this.getIdToProcess()[i]==0)
 					out.writeUTF("Time:\t\t\t\t\t\t");
 				if(this.getIdToProcess()[i]==1)
