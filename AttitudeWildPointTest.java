@@ -1,5 +1,3 @@
-package hw1;
-
 
 public class AttitudeWildPointTest implements WildPointTest {
 
