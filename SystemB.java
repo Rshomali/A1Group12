@@ -42,12 +42,12 @@ public class SystemB
 			IDsAndFuncs.put(ID.ALTI, Ft2M);
 			Converter converter = new Converter(new PipedInputStream[]{new PipedInputStream()}, new PipedOutputStream[]{new PipedOutputStream()}, IDsAndFuncs);
 
-			
+			int idsPerFrame = 4;
 			HashMap<Integer, WildPointTest> IDsAndWildPointTests = new HashMap<Integer, WildPointTest>();
 			WildPointTest pressureTest = new PressureBWildPointTest();
 			IDsAndWildPointTests.put(ID.PRES, pressureTest);
 			
-			ExtrapolatorFilter extrapolater = new ExtrapolatorFilter(new PipedInputStream[]{new PipedInputStream()}, new PipedOutputStream[]{new PipedOutputStream(),new PipedOutputStream()},IDsAndWildPointTests);
+			ExtrapolatorFilter extrapolater = new ExtrapolatorFilter(new PipedInputStream[]{new PipedInputStream()}, new PipedOutputStream[]{new PipedOutputStream(),new PipedOutputStream()},IDsAndWildPointTests,idsPerFrame);
 			
 			SinkFilter sink = new SinkFilter(new PipedInputStream[]{new PipedInputStream()}, null, new int[]{ID.TIME, ID.ALTI, ID.PRES,ID.TEMP}, "OutputB.dat");
 			SinkFilter rejected = new SinkFilter(new PipedInputStream[]{new PipedInputStream()}, null, new int[]{ID.TIME,ID.PRES}, "WildPoints.dat");

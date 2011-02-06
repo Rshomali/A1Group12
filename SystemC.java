@@ -32,8 +32,8 @@ public class SystemC
 			* Here we instantiate three filters.
 			****************************************************************************/
 
-		    SourceFilter sourceA = new SourceFilter(null, new PipedOutputStream[]{new PipedOutputStream()}, "/Users/nanchen/Desktop/filter/SubSetA.dat", null);
-		    SourceFilter sourceB = new SourceFilter(null, new PipedOutputStream[]{new PipedOutputStream()}, "/Users/nanchen/Desktop/filter/SubSetB.dat", null);
+		    SourceFilter sourceA = new SourceFilter(null, new PipedOutputStream[]{new PipedOutputStream()}, "SubSetA.dat", null);
+		    SourceFilter sourceB = new SourceFilter(null, new PipedOutputStream[]{new PipedOutputStream()}, "SubSetB.dat", null);
 		    
 		    //there is two input ports for the merge filter, one port is 0 and another is 1. 
 			//there is one output ports for the merge filter, the output port is 0
@@ -42,23 +42,23 @@ public class SystemC
 			inputPort3[1] = new PipedInputStream();			
 			MergeFilter mergeFilter = new MergeFilter(inputPort3, new PipedOutputStream[]{new PipedOutputStream()}, null);
 		    
-			
+			int idsPerFrame = 6;
 			HashMap<Integer, WildPointTest> IDsAndWildPointTests = new HashMap<Integer, WildPointTest>();
 			WildPointTest pressureTest = new PressureCWildPointTest();
 			IDsAndWildPointTests.put(ID.PRES, pressureTest);
-			ExtrapolatorFilter extrapolater1 = new ExtrapolatorFilter(new PipedInputStream[]{new PipedInputStream()}, new PipedOutputStream[]{new PipedOutputStream(),new PipedOutputStream()},IDsAndWildPointTests);
+			ExtrapolatorFilter extrapolater1 = new ExtrapolatorFilter(new PipedInputStream[]{new PipedInputStream()}, new PipedOutputStream[]{new PipedOutputStream(),new PipedOutputStream()},IDsAndWildPointTests, idsPerFrame);
 			
 			HashMap<Integer, WildPointTest> IDsAndWildPointTests2 = new HashMap<Integer, WildPointTest>();
 			WildPointTest pressureTest2 = new PressureWildPointTest();
 			WildPointTest attitudeTest = new AttitudeWildPointTest();
 			IDsAndWildPointTests2.put(ID.PRES, pressureTest2);
 			IDsAndWildPointTests2.put(ID.ATTI, attitudeTest);
-			ExtrapolatorFilter extrapolater2 = new ExtrapolatorFilter(new PipedInputStream[]{new PipedInputStream()}, new PipedOutputStream[]{new PipedOutputStream(),new PipedOutputStream()},IDsAndWildPointTests2);	
+			ExtrapolatorFilter extrapolater2 = new ExtrapolatorFilter(new PipedInputStream[]{new PipedInputStream()}, new PipedOutputStream[]{new PipedOutputStream(),new PipedOutputStream()},IDsAndWildPointTests2, idsPerFrame);	
 			
 			
-			SinkFilter sink = new SinkFilter(new PipedInputStream[]{new PipedInputStream()}, null, new int[]{ID.TIME, ID.ALTI, ID.PRES,ID.TEMP, ID.ATTI, ID.VELO}, "/Users/nanchen/Desktop/filter/outputC.txt");
-			SinkFilter firstrejected = new SinkFilter(new PipedInputStream[]{new PipedInputStream()}, null, new int[]{ID.TIME,ID.PRES}, "/Users/nanchen/Desktop/filter/firstWildPointsC.txt");
-			SinkFilter secondrejected = new SinkFilter(new PipedInputStream[]{new PipedInputStream()}, null, new int[]{ID.TIME,ID.PRES}, "/Users/nanchen/Desktop/filter/secondWildPointsC.txt");
+			SinkFilter sink = new SinkFilter(new PipedInputStream[]{new PipedInputStream()}, null, new int[]{ID.TIME, ID.ALTI, ID.PRES,ID.TEMP, ID.ATTI, ID.VELO}, "outputC.txt");
+			SinkFilter firstrejected = new SinkFilter(new PipedInputStream[]{new PipedInputStream()}, null, new int[]{ID.TIME,ID.PRES}, "firstWildPointsC.txt");
+			SinkFilter secondrejected = new SinkFilter(new PipedInputStream[]{new PipedInputStream()}, null, new int[]{ID.TIME,ID.PRES}, "secondWildPointsC.txt");
 
 			/****************************************************************************
 			* Here we connect the filters starting with the sink filter (Filter 1) which

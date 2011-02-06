@@ -28,10 +28,11 @@ public class ExtrapolatorFilter extends StandardFilter {
 	private boolean endofFile;
 	private boolean validValueFound;
 	private boolean[] validIds;
+	private int measurementsToRead;
 	
 	protected HashMap<Integer, WildPointTest> wildPointTest;
 	
-	public ExtrapolatorFilter(PipedInputStream inputReadPort[], PipedOutputStream outputWritePort[], HashMap<Integer, WildPointTest> IDsAndWildPointTests)
+	public ExtrapolatorFilter(PipedInputStream inputReadPort[], PipedOutputStream outputWritePort[], HashMap<Integer, WildPointTest> IDsAndWildPointTests, int idsPerFrame)
 	{
 		super(inputReadPort, outputWritePort, (new ArrayList<Integer>(IDsAndWildPointTests.keySet())).toArray(new Integer[]{}) );
 		
@@ -42,6 +43,7 @@ public class ExtrapolatorFilter extends StandardFilter {
 		//System.out.println(this.getName() + "::" + " function"+ this.wildPointTest.get(3).toString() +"\n");
 		
 		measurementsPerFrame = 6;
+		measurementsToRead = idsPerFrame;
 		wildPointFrameFound = false;
 		frame = new double[measurementsPerFrame];
 		this.validIds = new boolean[measurementsPerFrame];
@@ -116,6 +118,12 @@ public class ExtrapolatorFilter extends StandardFilter {
 		// check if we have a full frame by counting how many frames we already stored
 		if ( allMeasurementsRead() )
 		{
+			
+			Calendar TimeStamp = Calendar.getInstance();
+			SimpleDateFormat TimeStampFormat = new SimpleDateFormat("yyyy::dd::hh:mm:ss");
+			TimeStamp.setTimeInMillis(Double.doubleToLongBits(this.frame[0]));
+			System.out.println(this.getName() + ":: TIME=" + TimeStampFormat.format(TimeStamp.getTime())+"\n");
+			
 			// when having more than one extrapolation, this flag will tell us
 			// when all of them are true
 			boolean wildPointTestPassed = false;
@@ -146,12 +154,15 @@ public class ExtrapolatorFilter extends StandardFilter {
 			// frames then we need to extrapolate
     		if( wildPointTestPassed)
     		{
-    			System.out.println(this.getName() + "::Tests PASSED " + "\n");
-    			this.lastValidFrame = this.frame;
+    			System.out.println(this.getName() + "::Tests PASSED Pressure=" + this.frame[3] + "\n");
+    			for(int i=0; i<this.lastValidFrame.length;i++)
+    				this.lastValidFrame[i] = this.frame[i];
+    			
     			// if previous frame[s] contained wild points
     			if(this.wildPointFrameFound)
     			{
-    				System.out.println(this.getName() + "::WildPintFrame FOUND " + "\n");
+    				System.out.println(this.getName() + "::WildPointFrame FOUND " + "\n");
+    				
     				// calculate extrapolation value for each required measurement
 	    			double[] extrapolatedValue = extrapolateMeasurements();
 	    			
@@ -159,8 +170,17 @@ public class ExtrapolatorFilter extends StandardFilter {
 	    			// the extrapolated value for each instead
 	    			processAllCachedFrames(extrapolatedValue);
 	    			
+	    			// send current frame
+	   				for (int i=0; i< this.frame.length; i++) 
+    				{
+    					if(this.validIds[i])
+    						sendToOutport(i, this.frame[i]);
+    				}
+	    			
 	    			// reset the flag since we already took care of wild points
 	    			this.wildPointFrameFound = false;
+	    			
+	    			clearCachedFrames();
     			}
     			else
     			{
@@ -173,8 +193,28 @@ public class ExtrapolatorFilter extends StandardFilter {
     		}
     		else
     		{
-    			this.cachedFrames.add(this.frame);
-    			System.out.println(this.getName() + "::Tests FAILED " + "\n");
+    			double[] tmp_frame = new double[this.measurementsPerFrame];
+    			for (int i=0; i< this.frame.length; i++)
+    					tmp_frame[i] = this.frame[i];
+  
+
+    			//TimeStamp.setTimeInMillis(Double.doubleToLongBits(tmp_frame[0]));
+    			//System.out.println(this.getName() + ":: TIME2=" + TimeStampFormat.format(TimeStamp.getTime())+"\n");
+    			
+    			this.cachedFrames.add(tmp_frame);
+    			
+    			Iterator<double[]> itr = this.cachedFrames.iterator();
+    			while(itr.hasNext())
+    			{
+    				double[] temp_frame = itr.next();
+    				TimeStamp.setTimeInMillis(Double.doubleToLongBits(temp_frame[0]));
+    				System.out.println(this.getName() + ":: TIME2=" + TimeStampFormat.format(TimeStamp.getTime())+"\n");
+    				
+    			}
+    			
+
+    			//System.out.println(this.getName() + ":: <> Adding Cached frames = " + this.cachedFrames.size() +"  Pressure=" + this.frame[3] +"\n");
+    			System.out.println(this.getName() + "::Tests FAILED Pressure=" + this.frame[3] +"\n");
     			// this flag is set so that the next time we get a valid frame
     			// we know that we need to extrapolate measurements
     			this.wildPointFrameFound = true;	
@@ -190,17 +230,17 @@ public class ExtrapolatorFilter extends StandardFilter {
 	
 	private void processAllCachedFrames(double[] extrapolated_value)
 	{
-	
-	
 		
 		Iterator<double[]> itr = this.cachedFrames.iterator();
 		while(itr.hasNext())
 		{
 			double[] temp_frame = itr.next();
-            
+			    
+			// send timestamp
             sendToRejectedPort(0, temp_frame[0]);
+            sendToOutport(0, temp_frame[0]);
             
-			for(int i=0; i< temp_frame.length; i++)
+			for(int i=1; i< temp_frame.length; i++)
 			{
 				
 				if(this.validIds[i])
@@ -254,7 +294,8 @@ public class ExtrapolatorFilter extends StandardFilter {
 	{
 		double[] extrapolated_values = new double[this.measurementsPerFrame];
 
-		for(int i=0; i<this.measurementsPerFrame;i++)
+		// skip timestamp
+		for(int i=1; i<this.measurementsPerFrame;i++)
 		{
 			if(this.shouldProcessID(i))
 			{
@@ -284,7 +325,14 @@ public class ExtrapolatorFilter extends StandardFilter {
 	private void clearFrame()
 	{
 		this.frame = new double[this.measurementsPerFrame];
+		for(int i=0; i< this.measurementsPerFrame; i++)
+			this.frame[i] = -1;
 		this.measurementsRead = 0;
+	}
+
+	private void clearCachedFrames()
+	{
+		cachedFrames = new ArrayList<double[]>(1);
 	}
 	
 	private void storeMeasurement(int id, double value)
@@ -296,7 +344,7 @@ public class ExtrapolatorFilter extends StandardFilter {
 	private boolean allMeasurementsRead()
 	{
 		//System.out.println(this.getName() + "::" + "Measures read="+this.measurementsRead+"\n");
-		if (this.measurementsRead == this.measurementsPerFrame)
+		if (this.measurementsRead == this.measurementsToRead)
 			return true;
 		else
 			return false;
