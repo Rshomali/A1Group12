@@ -1,4 +1,3 @@
-package hw1;
 
 
 public class PressureCWildPointTest implements WildPointTest {
