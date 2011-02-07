@@ -29,6 +29,10 @@ public class ExtrapolatorFilter extends StandardFilter {
 	private boolean validValueFound;
 	private boolean[] validIds;
 	private int measurementsToRead;
+	private boolean print_star;
+	private boolean received_star;
+	private int star_id;
+	private int measIdToAddStar;
 	
 	protected HashMap<Integer, WildPointTest> wildPointTest;
 	
@@ -36,12 +40,8 @@ public class ExtrapolatorFilter extends StandardFilter {
 	{
 		super(inputReadPort, outputWritePort, (new ArrayList<Integer>(IDsAndWildPointTests.keySet())).toArray(new Integer[]{}) );
 		
-		//System.out.println(this.getName() + "::" + ">>>>>>>"+ this.idToProcess.length +"\n");
-		
 		wildPointTest = IDsAndWildPointTests;
-		
-		//System.out.println(this.getName() + "::" + " function"+ this.wildPointTest.get(3).toString() +"\n");
-		
+		star_id = 42;
 		measurementsPerFrame = 6;
 		measurementsToRead = idsPerFrame;
 		wildPointFrameFound = false;
@@ -61,6 +61,8 @@ public class ExtrapolatorFilter extends StandardFilter {
 		
 		endofFile = false;
 		validValueFound = false;
+		print_star = false;
+		received_star = false;
 		
 	}
 	
@@ -107,6 +109,13 @@ public class ExtrapolatorFilter extends StandardFilter {
     			this.wildPointFrameFound = false;
 			}
 		}
+		else if(id == this.star_id)
+		{
+			// skip and add "*" when printing value
+			this.print_star = true;
+			this.received_star = true;
+			System.out.println(this.getName() + ":: Received>> " + id + "\t" + measurement_value + "\n");
+		}
 		else
 		{
 			this.validIds[id] = true;
@@ -116,7 +125,7 @@ public class ExtrapolatorFilter extends StandardFilter {
 		}
 		
 		// check if we have a full frame by counting how many frames we already stored
-		if ( allMeasurementsRead() )
+		if ( (id != this.star_id) && (allMeasurementsRead()) )
 		{
 			
 			Calendar TimeStamp = Calendar.getInstance();
@@ -128,16 +137,13 @@ public class ExtrapolatorFilter extends StandardFilter {
 			// when all of them are true
 			boolean wildPointTestPassed = false;
 			
-			//System.out.println(this.getName() + "::" + "Fullllll Frammmmmeeeee .....\n");
 			// Go over the measurements in the frame and test for wild points
 			for (int i=0; i< this.frame.length; i++) 
 			{
 				// check if the measurement ID is one of the IDs I should check for wild points
 			    if (shouldProcessID(i))
 			    {
-			    	//System.out.println(this.getName() + "::" + "Should test ID="+ i +".....\n");
-			    	
-			    	//System.out.println(this.getName() + "::" + "Result="+ isWildPoint(i,this.frame[i]) +".....\n");
+			
 			    	// Check the measurement if its value is a wild point
 			    	// if not all  measurements we need to check are wild points then
 			    	// this is a valid frame
@@ -145,6 +151,10 @@ public class ExtrapolatorFilter extends StandardFilter {
 			    	{
 			    		wildPointTestPassed = true;
 			    	} // if
+			    	else
+			    	{
+			    		this.print_star = false;
+			    	} //else
 			    } // if
 			} // for
 			
@@ -173,8 +183,16 @@ public class ExtrapolatorFilter extends StandardFilter {
 	    			// send current frame
 	   				for (int i=0; i< this.frame.length; i++) 
     				{
-    					if(this.validIds[i])
+	   					
+	   					if(this.validIds[i])
+	   					{
+		   					if(this.print_star && (this.measIdToAddStar == i))
+		   					{
+		   						sendToOutport(this.star_id, (Double) 0.0 );
+		   						this.print_star = false;
+		   					}
     						sendToOutport(i, this.frame[i]);
+	   					}
     				}
 	    			
 	    			// reset the flag since we already took care of wild points
@@ -186,8 +204,17 @@ public class ExtrapolatorFilter extends StandardFilter {
     			{
     				for (int i=0; i< this.frame.length; i++) 
     				{
+	   					
     					if(this.validIds[i])
+    					{
+    	   					if(this.print_star && (this.measIdToAddStar == i))
+    	   					{
+    	   						System.out.println(this.getName() + "::Sending * before <==> " + i + "\n");
+    	   						sendToOutport(this.star_id, (Double) 0.0 );
+    	   						this.print_star = false;
+    	   					}
     						sendToOutport(i, this.frame[i]);
+    					}
     				}
     			}
     		}
@@ -213,7 +240,6 @@ public class ExtrapolatorFilter extends StandardFilter {
     			}
     			
 
-    			//System.out.println(this.getName() + ":: <> Adding Cached frames = " + this.cachedFrames.size() +"  Pressure=" + this.frame[3] +"\n");
     			System.out.println(this.getName() + "::Tests FAILED Pressure=" + this.frame[3] +"\n");
     			// this flag is set so that the next time we get a valid frame
     			// we know that we need to extrapolate measurements
@@ -249,6 +275,8 @@ public class ExtrapolatorFilter extends StandardFilter {
 					{
 						// write to rejected file
 						sendToRejectedPort(i, temp_frame[i]);
+						System.out.println(this.getName() + "::Sending * before ==> " + i + "\n");
+						sendToOutport(this.star_id, (Double) 0.0 );
 						sendToOutport(i, extrapolated_value[i]);
 					}
 					else
@@ -339,11 +367,15 @@ public class ExtrapolatorFilter extends StandardFilter {
 	{
 		this.frame[id] = value;
 		this.measurementsRead++;
+		if(this.received_star)
+		{
+			this.measIdToAddStar = id;
+			this.received_star = false;
+		}
 	}
 	
 	private boolean allMeasurementsRead()
 	{
-		//System.out.println(this.getName() + "::" + "Measures read="+this.measurementsRead+"\n");
 		if (this.measurementsRead == this.measurementsToRead)
 			return true;
 		else
@@ -352,9 +384,7 @@ public class ExtrapolatorFilter extends StandardFilter {
 	
 	private boolean isWildPoint(int id, double value)
 	{
-		//System.out.println(this.getName() + "::" + "ID=======" + id + "    Value=====" + value + "\n");
-		//System.out.println(this.getName() + "::" + "testing ID="+ id+ " Value="+value+" function"+ this.wildPointTest.get(id).toString() + "\n");
-		
+
 		return this.wildPointTest.get(id).execute(value);
 		//return false;
 	}

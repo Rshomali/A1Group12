@@ -35,6 +35,8 @@ public class SinkFilter extends FilterFramework
 		int i;							// This is a loop counter
 		
 		DataOutputStream out = null;			// File stream reference.
+		boolean print_star = false;
+		int star_id = 42;
 
 		/*************************************************************
 		*	First we announce to the world that we are alive...
@@ -72,7 +74,7 @@ public class SinkFilter extends FilterFramework
 				if(this.getIdToProcess()[i]==4)
 					out.writeUTF("Temperature:\t\t\t\t\t\t");
 				if(this.getIdToProcess()[i]==5)
-					out.writeUTF("Altitude:\t\t\t\t\t\t");
+					out.writeUTF("Attitude:\t\t\t\t\t\t");
 			}
 			out.writeUTF("\n----------------------------------" +
 					"---------------------------------------------" +
@@ -116,27 +118,72 @@ public class SinkFilter extends FilterFramework
 					TimeStamp.setTimeInMillis(measurement);
 					System.out.println();
 					System.out.print( TimeStampFormat.format(TimeStamp.getTime()));
-					out.writeUTF("\n"+TimeStampFormat.format(TimeStamp.getTime())+"\t\t\t\t\t\t");
+					if(print_star)
+					{
+						out.writeUTF("\n"+TimeStampFormat.format(TimeStamp.getTime())+"*\t\t\t\t\t\t");
+						print_star = false;
+					}
+					else
+					{
+						out.writeUTF("\n"+TimeStampFormat.format(TimeStamp.getTime())+"\t\t\t\t\t\t");
+					}
 				} 				
 				if(id==2)
 				{
 					System.out.print("      ID = " + id +"   " +altitudeFormat.format(Double.longBitsToDouble(measurement)));
-					out.writeUTF(altitudeFormat.format(Double.longBitsToDouble(measurement))+"\t\t\t\t\t\t");
+					if(print_star)
+					{
+						out.writeUTF(altitudeFormat.format(Double.longBitsToDouble(measurement))+"*\t\t\t\t\t\t");
+						print_star = false;
+					}
+					else
+					{
+						out.writeUTF(altitudeFormat.format(Double.longBitsToDouble(measurement))+"\t\t\t\t\t\t");
+					}
 				}				
 				if(id==3)  
 				{
 					System.out.print("      ID = " + id +"   " +pressureFormat.format(Double.longBitsToDouble(measurement)));
-					out.writeUTF(pressureFormat.format(Double.longBitsToDouble(measurement))+"\t\t\t\t\t\t");
+					if(print_star)
+					{
+						out.writeUTF(pressureFormat.format(Double.longBitsToDouble(measurement))+"*\t\t\t\t\t\t");
+						print_star = false;
+					}
+					else
+					{
+						out.writeUTF(pressureFormat.format(Double.longBitsToDouble(measurement))+"\t\t\t\t\t\t");
+					}
+					
 				}	
 				if(id==4)
 				{
 					System.out.print("      ID = " + id +"   " +temperaturFormat.format(Double.longBitsToDouble(measurement)));
-					out.writeUTF(temperaturFormat.format(Double.longBitsToDouble(measurement))+"\t\t\t\t\t\t");
+					if(print_star)
+					{
+						out.writeUTF(temperaturFormat.format(Double.longBitsToDouble(measurement))+"*\t\t\t\t\t\t");
+						print_star = false;
+					}
+					else
+					{
+						out.writeUTF(temperaturFormat.format(Double.longBitsToDouble(measurement))+"\t\t\t\t\t\t");
+					}
 				}
 				if(id==1|id==5)
 				{
 					System.out.print("      ID = " + id +"   " +otherFormat.format(Double.longBitsToDouble(measurement)));
-					out.writeUTF(otherFormat.format(Double.longBitsToDouble(measurement))+"\t\t\t\t\t\t");			
+					if(print_star)
+					{
+						out.writeUTF(otherFormat.format(Double.longBitsToDouble(measurement))+"*\t\t\t\t\t\t");
+						print_star = false;
+					}
+					else
+					{
+						out.writeUTF(otherFormat.format(Double.longBitsToDouble(measurement))+"\t\t\t\t\t\t");
+					}
+				}
+				if(id == star_id)
+				{
+					print_star = true;
 				}
 				
 			} // try
