@@ -1,4 +1,3 @@
-
 import java.util.*;						// This class is used to interpret time words
 import java.io.*;
 import java.text.DecimalFormat;
@@ -64,19 +63,19 @@ public class SinkFilter extends FilterFramework
 				for(i=0; i<this.getIdToProcess().length;i++)
 				{
 				if(this.getIdToProcess()[i]==0)
-					out.writeUTF("Time:\t\t\t\t\t\t");
+					out.writeUTF("Time:\t\t\t\t\t\t\t");
 				if(this.getIdToProcess()[i]==1)
-					out.writeUTF("Velocity:\t\t\t\t\t\t");
+					out.writeUTF("Velocity:\t\t\t\t\t\t\t");
 				if(this.getIdToProcess()[i]==2)
-					out.writeUTF("Altitude(m):\t\t\t\t\t\t");
+					out.writeUTF("Altitude(m):\t\t\t\t\t\t\t");
 				if(this.getIdToProcess()[i]==3)
-					out.writeUTF("Pressure:\t\t\t\t\t\t");
+					out.writeUTF("Pressure:\t\t\t\t\t\t\t");
 				if(this.getIdToProcess()[i]==4)
-					out.writeUTF("Temperature(C):\t\t\t\t\t\t");
+					out.writeUTF("Temperature(C):\t\t\t\t\t\t\t");
 				if(this.getIdToProcess()[i]==5)
-					out.writeUTF("Attitude:\t\t\t\t\t\t");
+					out.writeUTF("Attitude:\t\t\t\t\t\t\t");
 			}
-			out.writeUTF("\n----------------------------------" +
+			out.writeChars("\n---------------------------------------------" +
 					"---------------------------------------------" +
 					"---------------------------------------------------\n");
 		} catch (FileNotFoundException e1) {
