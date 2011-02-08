@@ -11,12 +11,10 @@ public class FilterOut extends StandardFilter
 
 	public void processIDAndMeasurement(int id, double measurement)
 	{
-	
-		//System.out.println("We're processing ID: "+id);
-			
 		boolean contains = false;
 		for(int i=0; i<idToProcess.length; ++i)
-			if(idToProcess[i] == id)
+			//42 is the ID that indicates that a measure was extrapolated, therefore we need to keep it
+			if(idToProcess[i] == id || id == 42)
 			{
 				contains = true;
 				break;
@@ -24,7 +22,6 @@ public class FilterOut extends StandardFilter
 			
 		if(contains)
 		{
-			System.out.println("kljhadsfYSESSSS");
 			writeID(id, currentPort);
 			writeMeasurement(Double.doubleToLongBits(measurement), currentPort);
 		}	

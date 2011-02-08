@@ -18,9 +18,10 @@ public class Converter extends StandardFilter
 		if(func == null)
 			result =  measurement;
 		else
-			result = (double)func.execute(measurement);
-			
+			result = func.execute(measurement);
+		
 		long longResult = Double.doubleToLongBits(result);
+		
 		writeID(id, currentPort);
 		writeMeasurement(longResult, currentPort);
 	}

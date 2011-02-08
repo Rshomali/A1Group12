@@ -11,8 +11,6 @@ public class StandardFilter extends FilterFramework
 	protected int bytesread = 0;				// This is the number of bytes read from the stream
 	protected int byteswritten = 0;				// This is the number of bytes writen to the stream
 	
-	public static int g = 0;
-	
 	public StandardFilter(PipedInputStream inputReadPort[], PipedOutputStream outputWritePort[], int idToProcess[])
 	{
 		super(inputReadPort, outputWritePort, idToProcess);
@@ -30,15 +28,11 @@ public class StandardFilter extends FilterFramework
 		
 		while(true)
 		{
-			currentPort = 0;
-			//for(currentPort = 0; currentPort < inputReadPort.length; ++currentPort)
+			for(currentPort = 0; currentPort < inputReadPort.length; ++currentPort)
 				try
 				{
 					id = readNextID(currentPort);
-					System.out.println("ID: " + id);
 					measurement = readNextMeasurement(currentPort);
-					++g;
-					System.out.println("Measurement: " + Double.longBitsToDouble(measurement));	
 					processIDAndMeasurement(id, Double.longBitsToDouble(measurement));
 					
 				}
@@ -46,7 +40,6 @@ public class StandardFilter extends FilterFramework
 				{
 					processIDAndMeasurement(-1, (Double) 0.0);	// Signal End of File to filter by sending id = -1 
 					ClosePorts();
-																	System.out.println("g: " + g);
 					System.out.print( "\n" + this.getName() + "::StandardFilter Exiting; bytes read: " + bytesread );
 
 					return;
@@ -61,8 +54,7 @@ public class StandardFilter extends FilterFramework
 	}
 	
 	public int readNextID(int portNo) throws EndOfStreamException
-	{
-		
+	{	
 		int id;							// This is the measurement id
 		int i;							// This is a loop counter
 		

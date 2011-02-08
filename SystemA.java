@@ -33,17 +33,17 @@ public class SystemA
 
 		SourceFilter source = new SourceFilter(null, new PipedOutputStream[]{new PipedOutputStream()}, "FlightData.dat", null);
 		
-		FilterOut filterOut = new FilterOut(new PipedInputStream[]{new PipedInputStream()}, new PipedOutputStream[]{new PipedOutputStream()}, new int[]{ID.TEMP, ID.ATTI});
+		FilterOut filterOut = new FilterOut(new PipedInputStream[]{new PipedInputStream()}, new PipedOutputStream[]{new PipedOutputStream()}, new int[]{ID.TEMP, ID.ALTI, ID.TIME});
 		
 		HashMap<Integer, ConversionFunction> IDsAndFuncs = new HashMap<Integer, ConversionFunction>();
 		ConversionFunction F2C = new Fahrenheit2Celsius();
 		ConversionFunction Ft2M = new Feet2Meter();
 		IDsAndFuncs.put(ID.TEMP, F2C);
-		IDsAndFuncs.put(ID.ATTI, Ft2M);
+		IDsAndFuncs.put(ID.ALTI, Ft2M);
 		Converter converter = new Converter(new PipedInputStream[]{new PipedInputStream()}, new PipedOutputStream[]{new PipedOutputStream()}, IDsAndFuncs);
 		
 		
-		SinkFilter sink = new SinkFilter(new PipedInputStream[]{new PipedInputStream()}, null, null, "output.dat");
+		SinkFilter sink = new SinkFilter(new PipedInputStream[]{new PipedInputStream()}, null, new int[]{ID.TEMP, ID.ALTI, ID.TIME}, "output.dat");
 
 		/****************************************************************************
 		* Here we connect the filters starting with the sink filter (Filter 1) which
@@ -52,15 +52,15 @@ public class SystemA
 		****************************************************************************/
 
 		sink.Connect(converter, 0, 0); // This esstially says, "connect sink input port to converter output port
-		converter.Connect(source, 0, 0); // This esstially says, "connect converter intput port to source output port
-	//	filterOut.Connect(source, 0, 0); // This esstially says, "connect sink input port to converter output port
+		converter.Connect(filterOut, 0, 0); // This esstially says, "connect converter intput port to source output port
+		filterOut.Connect(source, 0, 0); // This esstially says, "connect sink input port to converter output port
 		/****************************************************************************
 		* Here we start the filters up. All-in-all,... its really kind of boring.
 		****************************************************************************/
 
 		
 		source.start();
-	//	filterOut.start();
+		filterOut.start();
 		converter.start();
 		sink.start();
 		
