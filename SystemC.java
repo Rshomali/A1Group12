@@ -58,7 +58,7 @@ public class SystemC
 			
 			SinkFilter sink = new SinkFilter(new PipedInputStream[]{new PipedInputStream()}, null, new int[]{ID.TIME, ID.ALTI, ID.PRES,ID.TEMP, ID.ATTI, ID.VELO}, "outputC.txt");
 			SinkFilter firstrejected = new SinkFilter(new PipedInputStream[]{new PipedInputStream()}, null, new int[]{ID.TIME,ID.PRES}, "firstWildPointsC.txt");
-			SinkFilter secondrejected = new SinkFilter(new PipedInputStream[]{new PipedInputStream()}, null, new int[]{ID.TIME,ID.PRES}, "secondWildPointsC.txt");
+			SinkFilter secondrejected = new SinkFilter(new PipedInputStream[]{new PipedInputStream()}, null, new int[]{ID.TIME,ID.PRES, ID.ATTI}, "secondWildPointsC.txt");
 
 			/****************************************************************************
 			* Here we connect the filters starting with the sink filter (Filter 1) which

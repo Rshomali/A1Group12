@@ -68,11 +68,11 @@ public class SinkFilter extends FilterFramework
 				if(this.getIdToProcess()[i]==1)
 					out.writeUTF("Velocity:\t\t\t\t\t\t");
 				if(this.getIdToProcess()[i]==2)
-					out.writeUTF("Altitude:\t\t\t\t\t\t");
+					out.writeUTF("Altitude(m):\t\t\t\t\t\t");
 				if(this.getIdToProcess()[i]==3)
 					out.writeUTF("Pressure:\t\t\t\t\t\t");
 				if(this.getIdToProcess()[i]==4)
-					out.writeUTF("Temperature:\t\t\t\t\t\t");
+					out.writeUTF("Temperature(C):\t\t\t\t\t\t");
 				if(this.getIdToProcess()[i]==5)
 					out.writeUTF("Attitude:\t\t\t\t\t\t");
 			}
