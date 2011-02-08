@@ -1,4 +1,3 @@
-
 import java.util.*;						// This class is used to interpret time words
 import java.io.*;
 import java.text.DecimalFormat;
@@ -179,7 +178,7 @@ public class SinkFilter extends FilterFramework
 				if(this.getIdToProcess()[i]==5)
 					out.writeUTF("Attitude:\t\t\t\t\t\t");
 			}
-			out.writeUTF("\n----------------------------------" +
+			out.writeChars("\n---------------------------------------------" +
 					"---------------------------------------------" +
 					"---------------------------------------------------\n");
 		} catch (FileNotFoundException e1) {
